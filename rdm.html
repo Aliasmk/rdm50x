@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RDM Frame Decoder</title>
+  <link href="./style.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400&amp;display=swap" rel="stylesheet">
+  <script defer="" data-domain="rdm.50x.ca" data-api="https://perception.mkafarowski.workers.dev/connection/event"
+    src="https://perception.mkafarowski.workers.dev/perception/script.js"></script>
+</head>
+
+<body>
+  <script>
+    if (window.localStorage.getItem("darkmode") === 'true') {
+      document.documentElement.setAttribute("color-mode", "dark");
+    } else {
+      document.documentElement.setAttribute("color-mode", "light");
+    }
+  </script>
+
+  <header id="header">
+    <div id="titlebar">
+      <div id="logo">///</div>
+      <h1 id="title">RDM Frame Decoder</h1>
+    </div>
+  </header>
+
+  <section id="content">
+    <div id="content-inner">
+      <div id="calculator">
+        <h2>About This Calculator</h2>
+        <p>
+          This calculator gives you a quick way to decode E1.20 RDM frame data into easy-to-read categories. This can be
+          useful while troubleshooting communications between DMX/RDM devices. Paste an RDM frame (starting with the CC
+          start code and ending with the checksum) into the textbox and click Decode to process the data.
+        </p>
+
+        <div class="grid">
+          <div class="box">
+            <h3>RDM Frame Entry (hex)</h3>
+            <textarea id="hex" class="numericEntry" spellcheck="false"></textarea>
+
+            <div class="boxInner">
+              <button id="decodeBtn" type="button">Decode</button>
+              <button id="clearBtn"  type="button">Clear</button>
+              <button id="sampleBtn" type="button">Load sample</button>
+            </div>
+
+            <p id="status" class="center"></p>
+
+            <div class="box">
+              <h3>Settings</h3>
+              <form class="boxInner">
+                <div class="setting">
+                  <label for="uppercase_setting">
+                    <input type="checkbox" id="uppercase_setting" name="uppercase_setting">Use Uppercase Hex
+                  </label>
+                </div>
+                <div class="setting">
+                  <label for="darkmode_setting">
+                    <input type="checkbox" id="darkmode_setting" name="darkmode_setting">Dark Mode 😎
+                  </label>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="box">
+            <h3>Decoded fields</h3>
+            <table id="fields"></table>
+          </div>
+        </div>
+
+        <article>
+          <h2>What is RDM?</h2>
+          <p>RDM (Remote Device Management) is a communication protocol specified by <a
+              href="https://webstore.ansi.org/standards/esta/ansie1202010" target="_blank">ANSI E1.20</a> which deals
+            with the remote identification and configuration of equipment for theatrical and lighting purposes. It is an
+            extension to the <a href="https://webstore.ansi.org/standards/esta/ansie1112024" target="_blank">ANSI
+              E1.11</a> DMX512 protocol, is is designed to be fully compatible with both RDM enabled and legacy non-RDM
+            devices. With RDM, DMX devices can be remotely addressed, identified, and configured using an RDM
+            controller.</p>
+
+          <p>While DMX is a straightforward protocol (each byte represents one of 512 addresses), the RDM protocol is
+            more complex because of its bidirectional nature. The controller and devices share the same DMX universe, so
+            the communication protocol must specify which devices commands should be addressed to, and where any replies
+            should be sent. Commands may include data payloads. For example, setting the personality requires one byte
+            of payload data indicating the personality number to set. Other commands, such as setting the device label,
+            may carry
+            up to 32 bytes of ASCII characters.</p>
+
+          <p>The E1.20 specification lays out commands which allow rich control, configuration and monitoring of DMX
+            devices. All devices on a network can be enumerated through a 'discovery' process. The DMX address of
+            fixture, and their personalities can be configured. Diagnostic information such as sensor values, error
+            counts, and more can be viewed. In addition to the commands outlined in the standard, the RDM protocol is
+            flexible and allows extension by manufacturers to add their own proprietary commands.</p>
+
+          <h2>Planned Updates</h2>
+          <p>This tool is in development. Planned upgrades include:</p>
+          <ul>
+            <li>Decoding of multiple sequential frames with transaction highlighting</li>
+            <li>Richer payload breakdown for standard RDM PIDs</li>
+            <li>DMX frame decoding</li>
+            <li>Discovery response decoding</li>
+            <li>Upload of user-defined PIDs and payload breakdowns</li>
+            <li>Integration with <a href="https://calc.50x.ca" target="_blank">calc.50x.ca</a> for byte-level decoding
+            </li>
+          </ul>
+        </article>
+      </div>
+      <div id="sidebar">
+      </div>
+    </div>
+  </section>
+
+  <section id="footer">
+    <p>Built by <a href="https://michael.kafarowski.com">Michael Kafarowski</a>. Last updated in December 2025. If you
+      find this tool valuable, consider <a href="https://ko-fi.com/mkafarowski">buying me a coffee ☕</a>! </p>
+  </section>
+
+
+  <script src="rdm.js" type="text/javascript"></script>
+  <script src="common.js" type="text/javascript"></script>
+</body>
+
+</html>

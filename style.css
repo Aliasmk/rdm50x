@@ -1,0 +1,355 @@
+/* Light Mode */
+:root[color-mode="light"] {
+    --pageBackground: #ffffff;
+    --boxBackground: rgb(250, 250, 250);
+    --boxBorder: rgb(225, 225, 225);
+    --textColor: #000;
+    --numericBackground: white;
+    --numericBorder: rgb(182, 182, 182);
+    --buttonBackground: white;
+    --buttonBorder: rgb(225, 225, 225);
+    --calcDarkBg: rgb(240, 240, 240);
+    --calcLightBg: rgb(250, 250, 250);
+    --calcBorder: rgb(225, 225, 225);
+    --bitLabelColor: rgb(65, 65, 65);
+    --colorBitColor: rgb(120, 0, 0);
+    --setBitColor: rgb(130, 0, 0);
+    --setBitPulseColor: rgb(255, 26, 26);
+    --clearedBitColor: #d2d0d0;
+    --linkColor: rgb(131, 83, 83);
+    --tableEvenRowColor: rgb(240, 240, 240);
+    --invalidColor: rgb(254, 43, 43);
+}
+
+/* Dark Mode */
+:root[color-mode="dark"] {
+    --pageBackground: #1d1d25;
+    --boxBackground: #2b2b38;
+    --boxBorder: #53536f;
+    --textColor: rgb(214, 214, 214);
+    --numericBackground: #424257;
+    --numericBorder: #585874;
+    --buttonBackground: #585874;
+    --buttonBorder: #69698a;
+    --calcDarkBg: #2b2b38;
+    --calcLightBg: #333342;
+    --calcBorder: #585874;
+    --bitLabelColor: rgb(189, 189, 189);
+    --colorBitColor: rgb(255, 56, 56);
+    --setBitColor: rgb(255, 56, 56);
+    --setBitPulseColor: rgb(255, 255, 255);
+    --clearedBitColor: #131313;
+    --linkColor: rgb(255, 88, 88);
+    --tableEvenRowColor: #2e2e3b;
+    --invalidColor: rgb(190, 0, 0);
+}
+
+/*******************/
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background-color: var(--pageBackground, #ffffff);
+    color: var(--textColor, #000);
+
+    -webkit-transition: 0.25s ease background-color, ease 0.25s border-color;
+    -moz-transition: 0.25s ease background-color, ease 0.25s border-color;
+    -ms-transition: 0.25s ease background-color, ease 0.25s border-color;
+    transition: 0.25s ease background-color, ease 0.25s border-color;
+}
+
+body {
+    font-family: 'Ubuntu', sans-serif;
+    font-weight: 200;
+    
+    display: grid;
+    grid-template-rows: [header] auto [maincontent] 1fr [footer] auto;
+}
+
+h1 {
+    font-weight: 300;
+    font-size: 2em;
+    margin: 0;
+}
+
+h2 {
+    font-weight: 400;
+    font-size: 1.5em;
+    text-align: center;
+}
+
+h3 {
+    font-weight: 400;
+    font-size: 1.2em;
+    text-align: center;
+    margin: 0.5em 0.25em;
+}
+
+p {
+    line-height: 1.75em;
+}
+
+a {
+    color: rgb(131, 83, 83);
+    color: var(--linkColor, rgb(131, 83, 83));
+    display:inline-block;
+}
+
+li {
+    padding-bottom: 0.5em;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+th,td {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 1px solid rgb(216, 216, 216);
+    vertical-align: top;
+}
+
+input[type="text"] {
+    font-size: 1em;
+    box-sizing: border-box;
+    color: black;
+    color: var(--textColor, black);
+}
+
+input[type=checkbox] {
+    transform: scale(1.25);
+}
+
+textarea {
+    width: 99%;
+    min-height: 170px;
+    resize: vertical;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(9, 12, 30, 0.7);
+    color: var(--text);
+    font-family: ui-monospace, monospace;
+    font-size: 0.8em;
+    text-transform: uppercase;
+}
+
+button {
+    padding: 0.5em 1em;
+    margin: 0.25em;
+    display: inline-block;
+
+    text-align: center;
+    text-decoration: none;
+    font-family: 'Ubuntu', sans-serif;
+    font-weight: 300;
+    font-size: 1em;
+
+    color: black;
+    color: var(--textColor, black);
+    background-color: var(--buttonBackground, white);
+    border-radius: 0.5em;
+    border: 1px solid var(--buttonBorder, inherit);
+
+    -webkit-transition: 0.25s ease background-color, ease 0.25s border-color;
+    -moz-transition: 0.25s ease background-color, ease 0.25s border-color;
+    -ms-transition: 0.25s ease background-color, ease 0.25s border-color;
+    transition: 0.25s ease background-color, ease 0.25s border-color;
+}
+
+
+
+/**************/
+
+#logo {
+    font-size: 2em;
+    font-weight: 400;
+    align-self: center;
+    grid-column-start: 2;
+}
+
+#title {
+    grid-column-start: 4;
+}
+
+#header {
+    border-bottom: 3px solid rgb(168, 0, 0);
+    grid-row: header;
+    padding: 1em;
+}
+
+#titlebar {
+    display: grid;
+    grid-template-columns: 1fr 3em 1em auto 4em 1fr;
+    align-content: center;
+    text-align: center;
+}
+
+#content {
+    grid-row: maincontent;
+    display: grid;
+    grid-template-columns: 0.5em [midsect] auto 0.5em;
+}
+
+#content-inner {
+    grid-column: midsect;
+    display: grid;
+    grid-template-areas: "calculator" "sidebar";
+}
+
+#calculator {
+    padding: 0 1em;
+}
+
+#sidebar {
+    display: grid;
+    justify-content: center;
+    padding: 1em;
+}
+
+#footer {
+    border-top: 2px solid rgb(168, 0, 0);
+    grid-row: footer;
+}
+
+#footer p {
+    font-size: 0.75em;
+    text-align: center;
+}
+
+/******/
+
+.center {
+    text-align: center;
+}
+
+.smallText {
+    font-size: 0.75em;
+}
+
+/******/
+
+.grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr;
+}
+
+.box {
+    margin-bottom: 0.75em;
+    border: 1px solid var(--boxBorder, gb(225, 225, 225));
+    border-radius: 0.5em;
+    padding: 12px;
+    background-color: var(--boxBackground, rgb(250, 250, 250));
+
+    -webkit-transition: 0.25s ease background-color, ease 0.25s border-color;
+    -moz-transition: 0.25s ease background-color, ease 0.25s border-color;
+    -ms-transition: 0.25s ease background-color, ease 0.25s border-color;
+    transition: 0.25s ease background-color, ease 0.25s border-color;
+}
+
+.boxInner {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.5em;
+}
+
+.boxInner p {
+    flex-grow: 1;
+    text-align: center;
+    margin: 0.5em;
+}
+
+
+/******/
+
+.numericEntry {
+    border: 1px solid rgb(225, 225, 225);
+    border: 1px solid var(--calcBorder, rgb(225, 225, 225));
+    border-radius: 0.5em;
+    background-color: rgb(250, 250, 250);
+    background-color: var(--numericBackground, rgb(250, 250, 250));
+    padding: 0.25em;
+    margin-top: 0.25em;
+}
+
+.numericEntry:not(.numericEntryInvalid) {
+    -webkit-transition: 0.5s ease all;
+    -moz-transition: 0.5s ease all;
+    -ms-transition: 0.5s ease all;
+    transition: 0.5s ease all;
+}
+
+.numericEntryInvalid {
+    outline-color: var(--invalidColor);
+    border-color: var(--invalidColor);
+    color: var(--invalidColor);
+}
+
+
+.setting {
+    padding: 1em 2em;
+}
+
+.setting input {
+    vertical-align: bottom;
+    position: relative;
+    margin-right: 1em;
+}
+
+
+
+/* 1008px */
+@media (min-width: 80em) {
+    #content {
+        width: 90%;
+        max-width: 108em;
+        margin: 0 auto;
+    }
+
+    h2 {
+        text-align: left;
+    }
+}
+
+/* 704 px */
+@media (min-width: 56em) {
+    #calcInput {
+        grid-template-rows: 1fr;
+        grid-template-columns: repeat(3, 1fr) 2fr;
+        grid-gap: 1em;
+    }
+
+    .grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #binInput {
+        grid-template-areas: "byte byte";
+    }
+}
+
+/* 512 px */
+@media (min-width: 40em) {
+    #content {
+        grid-template-columns: 2em [midsect] auto 2em;
+    }
+
+    .boxInner {
+        flex-direction: row;
+    }
+
+    .setting {
+        padding: 0em 2em;
+    }
+
+    #calculator {
+        padding: 0 1em;
+    }
+
+}
