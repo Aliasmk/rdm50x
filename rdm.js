@@ -275,4 +275,11 @@ $("uppercase_setting").onchange = () => {
     $("decodeBtn").click();
 }
 
-$("sampleBtn").click();
+const params = new URLSearchParams(window.location.search);
+const data_param = params.get('data');  // "John"
+if(data_param != null && data_param != ''){
+    $("hex").value = data_param;
+    $("decodeBtn").click();
+} else {
+    $("sampleBtn").click();
+}
