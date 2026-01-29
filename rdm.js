@@ -103,19 +103,21 @@ function uidToString(bytes6) {
     return `${createHexString(manufacturerID,4)}:${createHexString((deviceID >>> 0),8)}`;
 }
 
-function decodeRdmFrame(bytes) {
+function decode(bytes) {
     if (bytes.length === 0) throw new Error("No bytes provided.");
-
-    const results = {
-        decoded: null
-    };
 
     // Check start code
     const startCode = bytes[0]
     if (startCode == 0x00) throw new Error(`Start code 0x00 found - DMX frame decoding not yet supported.`); /* TODO DMX FRAME DECODING */
-    else if (startCode == 0xFE) throw new Error(`Start code 0xFE found - Discovery response decoding not yet supported.`); /* TODO DISCOVERY FRAME DECODING */
-    else if (startCode !== 0xCC) throw new Error(`Start code 0x${createHexString(bytes[0],2)} is not standard DMX/RDM.`);
+    else if (startCode == 0xFE || startCode == 0xAA) return decodeDiscoveryResponse(bytes);
+    else if (startCode == 0xCC) return decodeRdmFrame(bytes);
+    else throw new Error(`Start code 0x${createHexString(bytes[0],2)} is not standard DMX/RDM.`);
 
+}
+
+function decodeRdmFrame(bytes) {
+    const results = { };
+    
     // Check message length field and compare with number of bytes received
     const messageLength = bytes[2];
     if (messageLength < 24) { // minimum defined by many E1.20 implementations as 24 (no parameter data)
@@ -159,7 +161,7 @@ function decodeRdmFrame(bytes) {
     // Collect results
     results.decoded = {
         framing: {
-            startCode: `0x${createHexString(bytes[0],2)}`,
+            type: `RDM`,
             subStartCode: `0x${createHexString(bytes[1],2)}`,
             messageLength: messageLength,
         },
@@ -192,12 +194,88 @@ function decodeRdmFrame(bytes) {
     return results;
 }
 
+function decodeDiscoveryResponse(bytes) {
+    const results = { };
+
+    // Discovery response has 0-7 bytes of preamble, followed by 0xAA separator, then 12 EUID bytes, then 4 checksum bytes
+    if (bytes.length < 17) {
+        throw new Error(`Discovery response too short. Minimum 17 bytes (0xAA + 12 EUID + 4 checksum), got ${bytes.length} bytes.`);
+    }
+    if (bytes.length > 24) {
+        throw new Error(`Discovery response too long. Maximum 24 bytes (7 preamble + 0xAA + 12 EUID + 4 checksum), got ${bytes.length} bytes.`);
+    }
+
+    // Find the preamble separator
+    let separatorIndex = -1;
+    for (let i = 0; i < Math.min(8, bytes.length); i++) {
+        if (bytes[i] === 0xAA) {
+            separatorIndex = i;
+            break;
+        }
+    }
+
+    if (separatorIndex === -1) {
+        throw new Error("Preamble separator (0xAA) not found in first 8 bytes.");
+    }
+
+    for (let i = 0; i < separatorIndex; i++) {
+        if (bytes[i] !== 0xFE) {
+            throw new Error(`Byte ${i} of preamble should be 0xFE, got 0x${createHexString(bytes[i], 2)}.`);
+        }
+    }
+
+    const euidStart = separatorIndex + 1;
+    const euidEnd = euidStart + 12;
+    const checksumStart = euidEnd;
+    const checksumEnd = checksumStart + 4;
+
+    // Decode EUID (12 bytes, organized as 6 pairs)
+    // UID is recovered by bitwise AND (&) of each pair
+    let euidBytes = new Uint8Array(6);
+    euidBytes[0] = bytes[euidStart + 0] & bytes[euidStart + 1];
+    euidBytes[1] = bytes[euidStart + 2] & bytes[euidStart + 3];
+    euidBytes[2] = bytes[euidStart + 4] & bytes[euidStart + 5];
+    euidBytes[3] = bytes[euidStart + 6] & bytes[euidStart + 7];
+    euidBytes[4] = bytes[euidStart + 8] & bytes[euidStart + 9];
+    euidBytes[5] = bytes[euidStart + 10] & bytes[euidStart + 11];
+
+    // Decode checksum 
+    const checksumMSB = bytes[checksumStart + 0] & bytes[checksumStart + 1];
+    const checksumLSB = bytes[checksumStart + 2] & bytes[checksumStart + 3];
+    const receivedChecksum = (checksumMSB << 8) | checksumLSB;
+
+    // Compute checksum: sum of the previous 12 EUID bytes
+    let computedChecksum = 0;
+    for (let i = euidStart; i < euidEnd; i++) {
+        computedChecksum = (computedChecksum + bytes[i]) & 0xFFFF;
+    }
+
+    const checksumOK = (computedChecksum === receivedChecksum);
+    if (!checksumOK) {
+        throw new Error(`Checksum mismatch: computed 0x${createHexString(computedChecksum, 4)} vs received 0x${createHexString(receivedChecksum, 4)}.`);
+    }
+
+    results.decoded = {
+        framing: {
+            type: `Discovery Response`,
+            preambleBytes: `${separatorIndex}`
+        },
+        uid: uidToString(euidBytes),
+        checksum: {
+            computed: `0x${createHexString(computedChecksum, 4)}`,
+            received: `0x${createHexString(receivedChecksum, 4)}`,
+            ok: checksumOK
+        }
+    };
+
+    return results;
+}
+
 // UI
 const $ = (id) => document.getElementById(id);
 const statusElement = $("status");
 const tableContainerElement = $("out");
 const tableElement = $("fields");
-
 
 function setStatus(text) {
     statusElement.textContent = text;
@@ -207,25 +285,41 @@ function renderResult(result) {
     tableElement.hidden = false;
 
     const d = result.decoded;
-    const rows = [
-        ["Start code", d.framing.startCode + (d.framing.startCode.toUpperCase()=== "0XCC" ? " (RDM)" : "")],
-        ["Sub-start code", d.framing.subStartCode + (d.framing.subStartCode === "0x01" ? " (RDM)" : "")],
-        ["Message length", `${d.framing.messageLength} (bytes, excluding checksum)`],
-        ["Destination UID", d.uids.destination],
-        ["Source UID", d.uids.source],
-        ["Transaction number", d.transaction.transactionNumber],
-        ["Port ID / Response type", d.transaction.portId_or_responseType],
-        ["Message count", d.transaction.messageCount],
-        ["Sub-device", `0x${createHexString(d.subDevice,4)}`],
-        ["Command class", d.messageDataBlock.commandClass ? `${d.messageDataBlock.commandClass.value} ${d.messageDataBlock.commandClass.name ? "(" + d.messageDataBlock.commandClass.name + ")" : ""}` : "—"],
-        ["Parameter ID", d.messageDataBlock.pid ? `${d.messageDataBlock.pid.value} ${d.messageDataBlock.pid.name ? "(" + d.messageDataBlock.pid.name + ")" : ""}` : "—"],
-        ["Payload data length", d.messageDataBlock.parameterDataLength + " byte" + `${(d.messageDataBlock.parameterDataLength == 1) ? "" : "s"}`],
-        ["Payload data (hex)", d.messageDataBlock.parameterData.hex || "—"],
-        ["Payload data (ASCII)", d.messageDataBlock.parameterData.ascii || "—"],
-        ["Checksum (computed)", d.checksum.computed],
-        ["Checksum (received)", d.checksum.received],
-        ["Checksum ok?", d.checksum.ok ? "YES" : "NO"]
-    ];
+    let rows = [];
+
+    // Check if this is a discovery response
+    if (d.uid !== undefined) {
+        // Discovery response format
+        rows = [
+            ["Frame Type", d.framing.type],
+            ["Preamble bytes", d.framing.preambleBytes],
+            ["UID", d.uid],
+            ["Checksum (computed)", d.checksum.computed],
+            ["Checksum (received)", d.checksum.received],
+            ["Checksum ok?", d.checksum.ok ? "YES" : "NO"]
+        ];
+    } else {
+        // RDM frame format
+        rows = [
+            ["Frame Type", d.framing.type],
+            ["Sub-start code", d.framing.subStartCode],
+            ["Message length", `${d.framing.messageLength} (bytes, excluding checksum)`],
+            ["Destination UID", d.uids.destination],
+            ["Source UID", d.uids.source],
+            ["Transaction number", d.transaction.transactionNumber],
+            ["Port ID / Response type", d.transaction.portId_or_responseType],
+            ["Message count", d.transaction.messageCount],
+            ["Sub-device", `0x${createHexString(d.subDevice,4)}`],
+            ["Command class", d.messageDataBlock.commandClass ? `${d.messageDataBlock.commandClass.value} ${d.messageDataBlock.commandClass.name ? "(" + d.messageDataBlock.commandClass.name + ")" : ""}` : "—"],
+            ["Parameter ID", d.messageDataBlock.pid ? `${d.messageDataBlock.pid.value} ${d.messageDataBlock.pid.name ? "(" + d.messageDataBlock.pid.name + ")" : ""}` : "—"],
+            ["Payload data length", d.messageDataBlock.parameterDataLength + " byte" + `${(d.messageDataBlock.parameterDataLength == 1) ? "" : "s"}`],
+            ["Payload data (hex)", d.messageDataBlock.parameterData.hex || "—"],
+            ["Payload data (ASCII)", d.messageDataBlock.parameterData.ascii || "—"],
+            ["Checksum (computed)", d.checksum.computed],
+            ["Checksum (received)", d.checksum.received],
+            ["Checksum ok?", d.checksum.ok ? "YES" : "NO"]
+        ];
+    }
 
     tableElement.innerHTML = "";
     for (const [k, v] of rows) {
@@ -249,7 +343,7 @@ function clearCharInvalid(id){
 $("decodeBtn").onclick = () => {
     try {
         const bytes = hexToBytes($("hex").value);
-        const result = decodeRdmFrame(bytes);
+        const result = decode(bytes);
         setStatus("Decoded successfully.");
         renderResult(result);
     } catch (e) {
@@ -270,6 +364,16 @@ $("sampleBtn").onclick = () => {
     $("decodeBtn").click();
     setStatus("Decoded sample frame.");
 };
+
+$("shareBtn").onclick = () => {
+    const dataToShare = normalizeHexInput($("hex").value);
+    // Copy the URL with the data parameter to clipboard
+    const url = new URL(window.location.href);
+    url.searchParams.set('data', dataToShare);
+    navigator.clipboard.writeText(url.toString()).then(() => {
+        setStatus("Shareable URL copied to clipboard.");
+    })
+}
 
 $("uppercase_setting").onchange = () => {
     $("decodeBtn").click();
